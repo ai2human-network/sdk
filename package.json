@@ -1,0 +1,20 @@
+{
+  "name": "ai2human-sdk-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/typescript",
+    "packages/mock-server"
+  ],
+  "scripts": {
+    "build": "npm run build -w @ai2human/sdk && npm run build -w @ai2human/mock-server",
+    "test": "npm run test -w @ai2human/sdk && npm run test -w @ai2human/mock-server && npm run test:python",
+    "test:python": "PYTHONPATH=packages/python/src python3 -m unittest discover -s packages/python/tests -v",
+    "validate:openapi": "node scripts/validate-openapi.mjs",
+    "validate:fixtures": "node scripts/validate-fixtures.mjs",
+    "validate": "npm run validate:openapi && npm run validate:fixtures && npm run build && npm test",
+    "dev:mock": "npm run dev -w @ai2human/mock-server"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

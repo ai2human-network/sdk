@@ -1,0 +1,25 @@
+name: CI
+on: [push, pull_request]
+permissions: { contents: read }
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm install
+      - run: npm run validate:openapi
+      - run: npm run validate:fixtures
+      - run: npm run build
+      - run: npm run test -w @ai2human/sdk
+      - run: npm run test -w @ai2human/mock-server
+  python:
+    runs-on: ubuntu-latest
+    strategy: { matrix: { python-version: ["3.10", "3.12"] } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python-version }}" }
+      - run: python -m pip install ./packages/python
+      - run: python -m unittest discover -s packages/python/tests -v

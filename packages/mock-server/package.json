@@ -1,0 +1,1 @@
+{"name":"@ai2human/mock-server","version":"0.1.0-preview.1","private":true,"type":"module","main":"dist/index.js","scripts":{"build":"tsc -p tsconfig.json","dev":"npm run build && node dist/index.js","test":"npm run build && node --test test/*.test.mjs"},"dependencies":{"@ai2human/sdk":"0.1.0-preview.1"},"license":"MIT"}

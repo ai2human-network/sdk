@@ -1,0 +1,1 @@
+import fs from "node:fs"; for(const file of ["fixtures/create-task.request.json","fixtures/create-task.response.json"]){JSON.parse(fs.readFileSync(new URL(`../${file}`,import.meta.url),"utf8"));} console.log("Validated shared fixtures.");

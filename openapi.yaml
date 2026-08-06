@@ -1,0 +1,194 @@
+openapi: 3.1.0
+info:
+  title: AI2Human Agent API
+  version: 0.1.0-preview.1
+  description: Create bounded human-execution tasks and inspect their proof, verification, funding, and settlement lifecycle.
+servers:
+  - url: https://ai2human.io
+    description: Production
+security:
+  - AgentApiKey: []
+paths:
+  /api/agent/tasks:
+    post:
+      operationId: createTask
+      summary: Create a human-execution task
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTaskRequest' }
+      responses:
+        '201':
+          description: Task created. Paid tasks may still be awaiting funding.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateTaskResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/agent/tasks/categories:
+    get:
+      operationId: listCategories
+      summary: List task categories and proof types
+      responses:
+        '200':
+          description: Supported categories
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoriesResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/tasks/{taskId}:
+    get:
+      operationId: getTask
+      summary: Read task and lifecycle status
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Task status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/tasks/{taskId}/proof:
+    get:
+      operationId: getProof
+      summary: Read the authorized proof bundle and verification decision
+      security:
+        - PrivyBearer: []
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Proof and verification
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProofResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  securitySchemes:
+    AgentApiKey:
+      type: apiKey
+      in: header
+      name: x-agent-api-key
+    PrivyBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Privy access token
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, maxLength: 200 }
+      description: Stable key for safely retrying task creation.
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema: { type: string, minLength: 1 }
+  schemas:
+    TaskCategory:
+      type: string
+      enum: [local_verification, identity_action, physical_task, digital_task, compliance_check, errand]
+    ProofType:
+      type: string
+      enum: [screenshot, photo, url, timestamp, receipt, signature, notes]
+    FundingMode:
+      type: string
+      enum: [funded, test_no_payout]
+    WorkflowState:
+      type: string
+      enum: [needs_info, draft, awaiting_funding, live, in_progress, proof_review, revision_required, verified, settlement_submitted, settled, cancelled, expired, refund_pending, refunded, disputed, needs_review]
+    CreateTaskRequest:
+      type: object
+      required: [title, description, category, funding_mode, reward_usdc, deadline_hours, proof_requirements]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        description: { type: string, minLength: 1, maxLength: 5000 }
+        category: { $ref: '#/components/schemas/TaskCategory' }
+        funding_mode: { $ref: '#/components/schemas/FundingMode' }
+        reward_usdc: { type: number, exclusiveMinimum: 0 }
+        deadline_hours: { type: number, exclusiveMinimum: 0 }
+        proof_requirements:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/ProofType' }
+        location: { type: string, maxLength: 300 }
+        agent_name: { type: string, maxLength: 120 }
+        source: { type: object, additionalProperties: true }
+    CreateTaskResponse:
+      type: object
+      required: [ok, task_id, status, task_url, task]
+      properties:
+        ok: { const: true }
+        task_id: { type: string }
+        status: { $ref: '#/components/schemas/WorkflowState' }
+        task_url: { type: string, format: uri }
+        task: { $ref: '#/components/schemas/Task' }
+    Task:
+      type: object
+      required: [id, title, budget, deadline, status]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        budget: { type: string }
+        deadline: { type: string, format: date-time }
+        status: { type: string }
+        taskState: { type: string }
+        updatedAt: { type: string, format: date-time }
+        campaign:
+          type: object
+          additionalProperties: true
+        evidence:
+          type: array
+          items: { type: object, additionalProperties: true }
+      additionalProperties: true
+    TaskResponse:
+      type: object
+      required: [task]
+      properties:
+        task: { $ref: '#/components/schemas/Task' }
+        payment: { type: [object, 'null'], additionalProperties: true }
+        poolStatus: { type: [object, 'null'], additionalProperties: true }
+        alternateClaimTask: { type: [object, 'null'], additionalProperties: true }
+    ProofResponse:
+      type: object
+      required: [proofBundle, verification]
+      properties:
+        proofBundle: { type: [object, 'null'], additionalProperties: true }
+        verification: { type: [object, 'null'], additionalProperties: true }
+    CategoriesResponse:
+      type: object
+      required: [categories, proof_types, settlement, coverage]
+      properties:
+        categories: { type: array, items: { $ref: '#/components/schemas/TaskCategory' } }
+        proof_types: { type: array, items: { $ref: '#/components/schemas/ProofType' } }
+        settlement: { type: string }
+        coverage: { type: string }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        code: { type: string }
+        details: { type: object, additionalProperties: true }
+  responses:
+    BadRequest:
+      description: Invalid request
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unauthorized:
+      description: Authentication required or invalid
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Authenticated caller lacks access
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Resource not found
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }

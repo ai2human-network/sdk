@@ -1,0 +1,1 @@
+{"title":"Reproduce a controlled HTTP error","description":"Open the controlled URL in a normal browser three times and submit screenshot-backed notes.","category":"digital_task","funding_mode":"test_no_payout","reward_usdc":1,"deadline_hours":24,"proof_requirements":["screenshot","timestamp","notes"],"agent_name":"Fixture Agent"}
