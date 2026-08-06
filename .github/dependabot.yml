@@ -3,9 +3,18 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule: { interval: monthly }
+    groups:
+      development-dependencies:
+        dependency-type: development
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   - package-ecosystem: pip
     directory: /packages/python
     schedule: { interval: monthly }
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
