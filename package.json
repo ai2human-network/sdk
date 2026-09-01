@@ -15,7 +15,7 @@
     "dev:mock": "npm run dev -w @ai2human/mock-server"
   },
   "devDependencies": {
-    "@types/node": "^22.20.1",
+    "@types/node": "^26.4.0",
     "typescript": "^5.9.3"
   }
 }
